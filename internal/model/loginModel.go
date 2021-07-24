@@ -24,13 +24,11 @@ type LogRecord struct {
 }
 
 //查询实体
-
 type FindByJobName struct {
 	JobName string `bson:"jobName"` //任务名
 }
 
 // 玩家的游戏数据
-
 type PlayerModel struct {
 	UniCode string // 客户端传递唯一识别码
 	UID     string // 唯一UID
@@ -127,7 +125,6 @@ func createPlayer(uniCode string) (saveData *PlayerModel, err error) {
 }
 
 // 客户端登陆注册
-
 func GetLoginData(uniCode string) (isNew bool, playerData *PlayerModel, err error) {
 	playerData, err = getPlayerInfo(uniCode)
 	if playerData.UID == "" {

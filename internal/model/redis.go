@@ -43,22 +43,16 @@ func PoolInitRedis(server string, password string) *redigo.Pool {
 	}
 }
 
+// 初始化
 func Init() {
 	var addr = "127.0.0.1:6379"
 	//var addr = "redis:6379"
 	var password = "123456"
 	//var password = ""
 	RedisPool = PoolInitRedis(addr, password)
-	// 测试
-	conn := RedisPool.Get()
-	res, err := redigo.String(conn.Do("set", "qq", "start"))
-	log.Println("--res", res, err)
-	res, err = redigo.String(conn.Do("get", "qq"))
-	log.Println("-2-res", res, err)
 }
 
 // 加锁
-
 func Lock() (ok bool, err error) {
 	c := RedisPool.Get()
 	defer c.Close()
@@ -75,7 +69,6 @@ func Lock() (ok bool, err error) {
 }
 
 // 解锁
-
 func Unlock(value string) (err error) {
 	c := RedisPool.Get()
 	defer c.Close()
@@ -95,7 +88,6 @@ func Unlock(value string) (err error) {
 }
 
 // 测试
-
 func GetAction() {
 	count := 1
 	for i := 1; i <= 10; i++ {

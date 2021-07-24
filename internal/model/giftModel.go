@@ -11,11 +11,18 @@ import (
 
 const GiftType = "_type"
 
-type LoginForm struct {
-	User     string `form:"user" binding:"required"`
-	Password string `form:"password" binding:"required"`
-}
+const (
+	//1-指定用户一次性消耗，2-不指定用户限制兑换次数，3-不限用户不限次数兑换
+	CodeTypeOne   = 1 //指定用户一次性消耗
+	CodeTypeTwo   = 2 //不指定用户限制兑换次数
+	CodeTypeThree = 3 //不限用户不限次数兑换
 
+	CodeTypeOneStr   = "1" //指定用户一次性消耗
+	CodeTypeTwoStr   = "2" //不指定用户限制兑换次数
+	CodeTypeThreeStr = "3" //不限用户不限次数兑换
+)
+
+// 礼品码信息
 type CreateGiftModels struct {
 	Code       string `form:"code" binding:""`
 	CodeType   int    `form:"codeType" binding:"required"`
@@ -26,6 +33,31 @@ type CreateGiftModels struct {
 	CreateUser string `form:"createUser" binding:"required"`
 	CostCount  int    `form:"costCount" binding:""`
 	UserId     int    `form:"userId" binding:"required"`
+}
+
+// 事物回滚，删除礼品码的领取用户历史
+func RollbackGiftCostHistoryRedis(code, uid, codeTypeStr string) (err error) {
+	conn := RedisPool.Get()
+	defer conn.Close()
+	codeHistory := code + "_history"
+	codeType := code + "_type"
+	res, err := redigo.Int64(conn.Do("HDEl", codeHistory, uid))
+	if err != nil {
+		log.Println("--RollbackGiftCostHistoryRedis", res, err)
+	}
+	res, err = redigo.Int64(conn.Do("HINCRBY", code, "CostCount", -1))
+	if err != nil {
+		log.Println("--RollbackGiftCostHistoryRedis", res, err)
+	}
+	// 类型2，限制次数  decr
+	if codeTypeStr == CodeTypeTwoStr {
+		res, err = redigo.Int64(conn.Do("DECR", codeType))
+		if err != nil {
+			log.Println("--RollbackGiftCostHistoryRedis -decr ", codeType, res, err)
+			return
+		}
+	}
+	return
 }
 
 // 获取玩家礼品领取记录
@@ -123,7 +155,7 @@ func getGiftRedis(code string) (resMap map[string]string, err error) {
 }
 
 // 保存礼品数据
-func saveGiftRedis(formData CreateGiftModels) (err error) {
+func SaveGiftRedis(formData CreateGiftModels) (err error) {
 	conn := RedisPool.Get()
 	defer conn.Close()
 
@@ -135,7 +167,7 @@ func saveGiftRedis(formData CreateGiftModels) (err error) {
 }
 
 // 保存礼品数据
-func saveGiftRedisType(code string) (err error) {
+func SaveGiftRedisType(code string) (err error) {
 	conn := RedisPool.Get()
 	defer conn.Close()
 
@@ -148,31 +180,7 @@ func saveGiftRedisType(code string) (err error) {
 	return
 }
 
-// 创建礼品码
-
-func CreateGiftModel(formData CreateGiftModels) (code string, err error) {
-	//codeType:="1" 	// 1-指定用户一次性消耗，2-不指定用户限制兑换次数，3-不限用户不限次数兑换
-	codeType := formData.CodeType
-	if codeType == 1 {
-		if formData.CostCount != 1 {
-			formData.CostCount = 1
-		}
-	} else if codeType == 3 {
-		formData.CostCount = -1
-	}
-	//code="SFDSHFUISD33"
-	code = utils.GetGiftCode()
-	formData.Code = code
-	err = saveGiftRedis(formData)
-	if codeType == 2 {
-		// 保存
-		saveGiftRedisType(code)
-	}
-	return
-}
-
 // 查询礼品码
-
 func GetGiftModel(code string) (resData map[string]string, err error) {
 	resData, err = getGiftRedis(code)
 	if len(resData) > 0 {
@@ -185,8 +193,7 @@ func GetGiftModel(code string) (resData map[string]string, err error) {
 }
 
 // 领取礼品
-
-func GetGiftReward(uid, code string) (content, msg string, err error) {
+func GetGiftReward(uid, code string) (codeType, content, msg string, err error) {
 	resData, err := getGiftRedis(code)
 	if len(resData) < 1 {
 		return
@@ -201,13 +208,13 @@ func GetGiftReward(uid, code string) (content, msg string, err error) {
 		}
 	}
 	//uid:=0
-	codeType := "1" // 1-指定用户一次性消耗，2-不指定用户限制兑换次数，3-不限用户不限次数兑换
+	codeType = CodeTypeOneStr // 1-指定用户一次性消耗，2-不指定用户限制兑换次数，3-不限用户不限次数兑换
 	if _, ok := resData["CodeType"]; ok {
 		codeType = resData["CodeType"]
 	}
 	costCount := resData["CostCount"]
 	costCountInt, _ := strconv.Atoi(costCount)
-	if codeType == "1" {
+	if codeType == CodeTypeOneStr {
 		uidStr := resData["UserId"]
 		if uid == uidStr && costCountInt < 1 {
 			// 返礼品
@@ -221,7 +228,7 @@ func GetGiftReward(uid, code string) (content, msg string, err error) {
 			msg = "失败，已领取"
 			return
 		}
-	} else if codeType == "2" {
+	} else if codeType == CodeTypeTwoStr {
 		historyData, _ := getPlayerGiftHistory(code, uid)
 		if len(historyData) > 0 {
 			msg = "玩家已经领取过该礼品码"
@@ -245,7 +252,7 @@ func GetGiftReward(uid, code string) (content, msg string, err error) {
 		}
 		msg = "领取失败,次数已使用完"
 		return
-	} else if codeType == "3" {
+	} else if codeType == CodeTypeThreeStr {
 		historyData, _ := getPlayerGiftHistory(code, uid)
 		if len(historyData) > 0 {
 			msg = "玩家已经领取过该礼品码"

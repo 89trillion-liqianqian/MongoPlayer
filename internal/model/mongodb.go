@@ -36,6 +36,7 @@ func GetMgoCli() *mongo.Client {
 	return mgoCli
 }
 
+// 初始化
 func InitMongo() {
 	//2.选择数据库 my_db
 	db = client.Database("gift")
