@@ -45,9 +45,18 @@ func PoolInitRedis(server string, password string) *redigo.Pool {
 
 // 初始化
 func Init() {
-	var addr = "127.0.0.1:6379"
-	//var addr = "redis:6379"
-	var password = "123456"
+	//var addr = "127.0.0.1:6379"
+	////var addr = "redis:6379"
+	//var password = "123456"
+	addr, err := GetKey("main-redis", "Host")
+	if err != nil {
+		addr = "127.0.0.1:6379"
+	}
+	password, err := GetKey("main-redis", "Password")
+	if err != nil {
+		password = ""
+	}
+	log.Println("--pp-", addr, password)
 	//var password = ""
 	RedisPool = PoolInitRedis(addr, password)
 }

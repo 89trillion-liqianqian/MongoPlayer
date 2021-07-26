@@ -1,8 +1,8 @@
 package model
 
 import (
+	"MongoPlayer/internal/service"
 	"MongoPlayer/protoFile/protoFile"
-	"MongoPlayer/utils"
 	"context"
 	"encoding/json"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -112,7 +112,7 @@ func getPlayerInfo(uniCode string) (resData *PlayerModel, err error) {
 // 创建玩家
 func createPlayer(uniCode string) (saveData *PlayerModel, err error) {
 	// 生成 UID
-	uid := utils.GetUID()
+	uid := service.GetUID()
 	saveData = new(PlayerModel)
 	saveData.UID = uid
 	saveData.UniCode = uniCode

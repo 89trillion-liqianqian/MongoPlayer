@@ -2,8 +2,8 @@ package handler
 
 import (
 	"MongoPlayer/internal/model"
+	"MongoPlayer/internal/service"
 	"MongoPlayer/protoFile/protoFile"
-	"MongoPlayer/utils"
 	"log"
 )
 
@@ -19,7 +19,7 @@ func CreateGiftHandler(formData model.CreateGiftModels) (code string, err error)
 		formData.DrawCount = 0
 	}
 	//code="SFDSHFUISD33"
-	code = utils.GetGiftCode()
+	code = service.GetGiftCode()
 	// 保存redis
 	formData.Code = code
 	err = model.SaveGiftRedis(formData)

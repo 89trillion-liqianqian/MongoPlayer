@@ -1,7 +1,7 @@
 package model
 
 import (
-	"MongoPlayer/utils"
+	"MongoPlayer/internal/service"
 	"encoding/json"
 	redigo "github.com/gomodule/redigo/redis"
 	"log"
@@ -201,7 +201,7 @@ func GetGiftReward(uid, code string) (codeType, content, msg string, err error) 
 	//  判有效性
 	if _, ok := resData["validTime"]; ok {
 		validTime := resData["validTime"]
-		if !utils.CheckTime(validTime) {
+		if !service.CheckTime(validTime) {
 			// 过期，领取失败，
 			msg = "过期，领取失败"
 			return

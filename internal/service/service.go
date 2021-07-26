@@ -1,4 +1,4 @@
-package utils
+package service
 
 import (
 	"github.com/satori/go.uuid"
@@ -15,7 +15,6 @@ const (
 )
 
 // 随机字符串
-
 func Krand(size int, kind int) []byte {
 	ikind, kinds, result := kind, [][]int{[]int{10, 48}, []int{26, 97}, []int{26, 65}}, make([]byte, size)
 	is_all := kind > 2 || kind < 0
@@ -31,14 +30,12 @@ func Krand(size int, kind int) []byte {
 }
 
 //获取八位礼品码
-
 func GetGiftCode() (code string) {
 	code = string(Krand(8, 3))
 	return
 }
 
 // 校验是否过期
-
 func CheckTime(validTime string) (isValid bool) {
 	validTimeInt, _ := strconv.Atoi(validTime)
 	validTimeInt64 := int64(validTimeInt)
@@ -50,16 +47,9 @@ func CheckTime(validTime string) (isValid bool) {
 	return
 }
 
+// 获取唯一UID
 func GetUID() string {
 	// 创建UUID版本4
 	uuid4 := uuid.Must(uuid.NewV4(), nil).String()
-	//fmt.Printf("--1Successfully parsed: %s", uuid4)
-	//// 从字符串输入解析UUID
-	//u2, err := uuid.FromString("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
-	//if err != nil {
-	//	fmt.Printf("Something went wrong: %s", err)
-	//	return uuid4
-	//}
-	//fmt.Printf("--2Successfully parsed: %s", u2)
 	return uuid4
 }
