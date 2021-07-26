@@ -20,6 +20,8 @@ liqianqian@liqianqian MongoPlayer % tree
 │   ├── http
 │   │   └── httpServer.go				#http 启动
 │   └── main.go				#入口
+├── config				#配置文件
+│   └── app.ini
 ├── go.mod
 ├── go.sum
 ├── internal
@@ -37,6 +39,8 @@ liqianqian@liqianqian MongoPlayer % tree
 │   │   └── err.go
 │   └── router				#路由
 │       └── router.go
+│   └── service
+│       └── service.go
 ├── locust				#压测
 │   ├── __pycache__
 │   │   ├── load.cpython-37.pyc
